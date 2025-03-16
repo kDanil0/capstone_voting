@@ -11,7 +11,7 @@
         'Content-Type': 'application/json',
     },
     withCredentials: false, // If you need to send cookies or other credentials with requests
-    timeout: 10000, // Optional: to set a timeout for requests
+    // timeout: 10000, // Optional: to set a timeout for requests
   });
 
     export const registerUser = async (formData) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { documentAPI } from "../utils/api";
-import { useAuthContext } from "../utils/AuthContext";
+import { documentAPI } from "../../utils/api";
+import { useAuthContext } from "../../utils/AuthContext";
 
 const DocumentUpload = () => {
   const { token } = useAuthContext();
@@ -101,7 +101,7 @@ const DocumentUpload = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 flex gap-6">
+    <div className="h-96 container mx-auto flex gap-6">
       {/* Left Column - Status Section */}
       <div className="flex-1 bg-white rounded-lg shadow p-6">
         <div className="mb-6">
@@ -113,59 +113,66 @@ const DocumentUpload = () => {
           </p>
         </div>
 
-        {/* Status Section Content */}
-        {statusLoading ? (
-          <div className="mb-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
-        ) : documents.length > 0 ? (
-          <div className="space-y-4">
-            {documents.map((doc, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex">
-                    <span className="text-sm font-medium w-24">Name:</span>
-                    <span className="text-sm text-gray-600">
-                      {doc.document_name || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-sm font-medium w-24">Status:</span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                        doc.status
-                      )}`}
-                    >
-                      {doc.status
-                        ? doc.status.charAt(0).toUpperCase() +
-                          doc.status.slice(1)
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-sm font-medium w-24">Uploaded:</span>
-                    <span className="text-sm text-gray-600">
-                      {doc.created_at
-                        ? new Date(doc.created_at).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
-                        : "N/A"}
-                    </span>
+        {/* Status Section Content - Added max-height and overflow-y-auto */}
+        <div className="max-h-[calc(100vh-240px)] overflow-y-auto pr-2">
+          {statusLoading ? (
+            <div className="mb-6 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ) : documents.length > 0 ? (
+            <div className="space-y-4">
+              {documents.map((doc, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex">
+                      <span className="text-sm font-medium w-24">Name:</span>
+                      <span className="text-sm text-gray-600">
+                        {doc.document_name || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex">
+                      <span className="text-sm font-medium w-24">Status:</span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                          doc.status
+                        )}`}
+                      >
+                        {doc.status
+                          ? doc.status.charAt(0).toUpperCase() +
+                            doc.status.slice(1)
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex">
+                      <span className="text-sm font-medium w-24">
+                        Uploaded:
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {doc.created_at
+                          ? new Date(doc.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500 text-center">
-              No documents uploaded yet
-            </p>
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500 text-center">
+                No documents uploaded yet
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right Column - Upload Section */}

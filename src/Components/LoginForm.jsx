@@ -49,16 +49,10 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-8 bg-white rounded-2xl">
+    <div className="w-4/12 mx-auto mt-8 p-8 bg-white rounded-2xl">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <h2 className="text-4xl font-climate tracking-widest font-bold text-[#3F51B5]">
-          SPCF
-        </h2>
-        <h5 className="text-md font-bebas tracking-widest font-bold text-[#3F51B5]">
-          ELECTORAL SYSTEM
-        </h5>
-        <h2 className="text-3xl font-bebas mt-4 font-bold text-[#3F51B5]">
+        <h2 className="text-4xl font-climate tracking-wider mt-4 font-bold text-[#3F51B5]">
           Login
         </h2>
       </div>
@@ -78,7 +72,7 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-md font-medium font-assistant text-gray-700 mb-2"
             htmlFor="student_id"
           >
             Student ID
@@ -89,7 +83,7 @@ const LoginForm = () => {
             name="student_id"
             value={formData.student_id}
             onChange={handleChange}
-            className="w-full px-4 py-3 rounded-lg bg-[#F5F5F5] border border-gray-200
+            className="font-assistant w-full px-4 py-2 rounded-lg bg-[#F5F5F5] border border-gray-200
                      focus:border-[#3F51B5] focus:ring-1 focus:ring-[#3F51B5] outline-none
                      transition-all"
             required
@@ -99,7 +93,7 @@ const LoginForm = () => {
 
         <div>
           <label
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-md font-medium font-assistant text-gray-700 mb-2"
             htmlFor="email"
           >
             Email
@@ -110,7 +104,7 @@ const LoginForm = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 rounded-lg bg-[#F5F5F5] border border-gray-200
+            className="font-assistant w-full px-4 py-2 rounded-lg bg-[#F5F5F5] border border-gray-200
                      focus:border-[#3F51B5] focus:ring-1 focus:ring-[#3F51B5] outline-none
                      transition-all"
             required
@@ -121,7 +115,7 @@ const LoginForm = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-3 px-4 rounded-lg font-medium text-white
+          className={`font-assistant w-full py-3 px-4 rounded-lg font-bold text-white
                      ${
                        isLoading
                          ? "bg-gray-400 cursor-not-allowed"
@@ -157,13 +151,6 @@ const LoginForm = () => {
           )}
         </button>
       </form>
-
-      <div className="mt-6 text-center text-sm text-gray-500">
-        <p>
-          Please enter your student ID and email to receive an OTP verification
-          code.
-        </p>
-      </div>
     </div>
   );
 };

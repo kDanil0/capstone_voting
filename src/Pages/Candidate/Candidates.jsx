@@ -1,10 +1,11 @@
 import React from "react";
+import Post from "../../Components/Post";
 
 function Candidates() {
   return (
-    <div>
-      <h1>Candidates</h1>
-    </div>
+    <>
+      <Post />
+    </>
   );
 }
 

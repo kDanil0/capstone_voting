@@ -15,7 +15,6 @@ const VerifyOTP = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
 
   useEffect(() => {
     // Redirect if no email is provided
@@ -23,26 +22,7 @@ const VerifyOTP = () => {
       navigate("/login");
       return;
     }
-
-    // Timer countdown
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [location.state?.email, navigate]);
-
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
+  }, []);
 
   const handleChange = (e) => {
     const value = e.target.value.slice(0, 6);
@@ -80,52 +60,36 @@ const VerifyOTP = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-8 bg-white rounded-2xl">
+    <div className="w-4/12 mx-auto mt-8 p-8 bg-white rounded-2xl">
       {/* Logo Section - Matching LoginForm */}
-      <div className="mb-8 text-center">
-        <h2 className="text-4xl font-climate tracking-widest font-bold text-[#3F51B5]">
-          SPCF
-        </h2>
-        <h5 className="text-md font-bebas tracking-widest font-bold text-[#3F51B5]">
-          ELECTORAL SYSTEM
-        </h5>
-        <h2 className="text-3xl font-bebas mt-4 font-bold text-[#3F51B5]">
+      <div className="mb-4 text-center">
+        <h2 className="text-4xl font-climate tracking-wider mt-4 font-bold text-[#3F51B5]">
           Verify OTP
         </h2>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+        <div className="mb-4 p-3 font-assistant bg-red-50 text-red-600 rounded-lg text-sm">
           {error}
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-lg text-sm">
+        <div className="mb-4 p-3 font-assistant bg-green-50 text-green-600 rounded-lg text-sm">
           {successMessage}
         </div>
       )}
 
       <div className="mb-4 text-center">
-        <p className="text-gray-700">
-          Please enter the verification code sent to
-        </p>
-        <p className="font-medium text-[#3F51B5]">{formData.email}</p>
-      </div>
-
-      <div className="mb-4 text-center">
-        <p className="text-sm text-gray-500">
-          Time remaining:{" "}
-          <span className="font-medium text-[#3F51B5]">
-            {formatTime(timeLeft)}
-          </span>
+        <p className="text-gray-700 font-assistant text-lg font-medium">
+          Please enter the verification code
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-md font-assistant font-medium text-gray-700 mb-2"
             htmlFor="code"
           >
             Verification Code
@@ -136,9 +100,9 @@ const VerifyOTP = () => {
             name="code"
             value={formData.code}
             onChange={handleChange}
-            className="w-full px-4 py-3 rounded-lg bg-[#F5F5F5] border border-gray-200
+            className="w-full px-4 py-2 rounded-lg bg-[#F5F5F5] border border-gray-200
                      focus:border-[#3F51B5] focus:ring-1 focus:ring-[#3F51B5] outline-none
-                     transition-all text-center text-2xl tracking-widest"
+                     transition-all text-center text-xl font-assistant font-bold tracking-widest"
             placeholder="Enter 6-character code"
             required
             maxLength="6"
@@ -147,10 +111,10 @@ const VerifyOTP = () => {
 
         <button
           type="submit"
-          disabled={isLoading || timeLeft === 0 || formData.code.length !== 6}
+          disabled={isLoading || formData.code.length !== 6}
           className={`w-full py-3 px-4 rounded-lg font-medium text-white
                      ${
-                       isLoading || timeLeft === 0 || formData.code.length !== 6
+                       isLoading || formData.code.length !== 6
                          ? "bg-gray-400 cursor-not-allowed"
                          : "bg-[#3F51B5] hover:bg-[#4B5FCD] transition-colors"
                      }`}
@@ -184,18 +148,6 @@ const VerifyOTP = () => {
           )}
         </button>
       </form>
-
-      {timeLeft === 0 && (
-        <div className="mt-6 text-center">
-          <p className="text-red-600 text-sm">Code expired</p>
-          <button
-            onClick={() => navigate("/login")}
-            className="mt-2 text-[#3F51B5] hover:text-[#4B5FCD]"
-          >
-            Request new code
-          </button>
-        </div>
-      )}
 
       <div className="mt-6 text-center">
         <button

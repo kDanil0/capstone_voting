@@ -1,4 +1,4 @@
-import DocumentUpload from "../components/DocumentUpload";
+import DocumentUpload from "../Components/Candidate/DocumentUpload";
 
 const DocumentPage = () => {
   return (
