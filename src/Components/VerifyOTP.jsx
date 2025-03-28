@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { verifyUser } from "../utils/api";
+// import { verifyUser } from "../utils/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "../utils/AuthContext";
 

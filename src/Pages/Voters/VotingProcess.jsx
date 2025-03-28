@@ -1,205 +1,182 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ProgressBar from '../../Components/Voting/ProgressBar';
+import { getElectionById, getCandidatesByElection, submitVote } from '../../utils/api';
+import { useAuthContext } from '../../utils/AuthContext';
+// import ProgressBar from '../../Components/Voting/ProgressBar';
 import PositionVoting from '../../Components/Voting/PositionVoting';
 import VoteSummary from '../../Components/Voting/VoteSummary';
 import NavigationButtons from '../../Components/Voting/NavigationButtons';
 
-const mockElectionData = {
-  id: "ssc-2023",
-  title: "SUPREME STUDENT COUNCIL ELECTION 2023",
-  positions: [
-    {
-      id: 1,
-      title: "SSC PRESIDENT",
-      instruction: "Select one candidate or abstain",
-      candidates: [
-        { 
-          id: 101, 
-          name: "MARK DANIEL TORRES", 
-          partylist: "Partylist 1",
-          image: null
-        },
-        { 
-          id: 102, 
-          name: "MICHAEL ANGELO CULLERA", 
-          partylist: "Partylist 2",
-          image: null
-        },
-        { 
-          id: 103, 
-          name: "KATHERINE ANNE BALICAO", 
-          partylist: "Partylist 3",
-          image: null
-        }
-      ]
-    },
-    {
-      id: 2,
-      title: "SSC VICE PRESIDENT",
-      instruction: "Select one candidate or abstain",
-      candidates: [
-        { 
-          id: 201, 
-          name: "JESUS BROWN", 
-          partylist: "Partylist 1",
-          image: null
-        },
-        { 
-          id: 202, 
-          name: "JOHN GABRIEL DAYRIT", 
-          partylist: "Partylist 2",
-          image: null
-        }
-      ]
-    },
-    {
-      id: 3,
-      title: "SSC SECRETARY",
-      instruction: "Select one candidate or abstain",
-      candidates: [
-        { 
-          id: 301, 
-          name: "AMY WITHERTAKER", 
-          partylist: "Partylist 1",
-          image: null
-        },
-        { 
-          id: 302, 
-          name: "ANN TAYLOR", 
-          partylist: "Partylist 2",
-          image: null
-        },
-        { 
-          id: 303, 
-          name: "JOYCE CAMERON", 
-          partylist: "Partylist 3",
-          image: null
-        }
-      ]
-    },
-    {
-      id: 4,
-      title: "SSC TREASURER",
-      instruction: "Select one candidate or abstain",
-      candidates: [
-        { 
-          id: 401, 
-          name: "JOHN MYERS", 
-          partylist: "Partylist 1",
-          image: null
-        },
-        { 
-          id: 402, 
-          name: "ARTHUR NERY", 
-          partylist: "Partylist 2",
-          image: null
-        },
-        { 
-          id: 403, 
-          name: "PAULO VELASQUEZ", 
-          partylist: "Partylist 3",
-          image: null
-        }
-      ]
-    },
-    {
-      id: 5,
-      title: "SSC AUDITOR",
-      instruction: "Select one candidate or abstain",
-      candidates: [
-        { 
-          id: 501, 
-          name: "CANDIDATE 1", 
-          partylist: "Partylist 1",
-          image: null
-        },
-        { 
-          id: 502, 
-          name: "CANDIDATE 2", 
-          partylist: "Partylist 2",
-          image: null
-        }
-      ]
-    }
-  ]
-};
-
 const VotingProcess = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, token } = useAuthContext();
+  
+  const [election, setElection] = useState(null);
+  const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [electionData, setElectionData] = useState(null);
+  const [error, setError] = useState(null);
+  const [selectedCandidates, setSelectedCandidates] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
-  const [selections, setSelections] = useState({});
   const [showSummary, setShowSummary] = useState(false);
 
+  // Fetch election and candidates data
   useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setElectionData(mockElectionData);
-      setLoading(false);
-    }, 500);
-  }, [id]);
+    const fetchVotingData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get election details
+        const electionResponse = await getElectionById(token, id);
+        setElection(electionResponse.election);
+        
+        // Get candidates grouped by position
+        const candidatesResponse = await getCandidatesByElection(id);
+        if (candidatesResponse.data) {
+          setPositions(candidatesResponse.data);
+        } else {
+          throw new Error('No position data received');
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching voting data:', err);
+        setError('Failed to load voting information. Please try again.');
+        setLoading(false);
+      }
+    };
 
-  const handleSelectCandidate = (candidateId) => {
-    const currentPosition = electionData.positions[currentPositionIndex];
-    setSelections({
-      ...selections,
-      [currentPosition.id]: candidateId
-    });
+    fetchVotingData();
+  }, [id, token]);
+
+  // Handle candidate selection
+  const handleSelectCandidate = (positionId, candidateId) => {
+    setSelectedCandidates(prev => ({
+      ...prev,
+      [positionId]: candidateId
+    }));
   };
 
-  const handleAbstain = () => {
-    const currentPosition = electionData.positions[currentPositionIndex];
-    setSelections({
-      ...selections,
-      [currentPosition.id]: 'abstain'
-    });
-  };
-
-  const handleNext = () => {
-    if (currentPositionIndex < electionData.positions.length - 1) {
-      setCurrentPositionIndex(currentPositionIndex + 1);
-    } else {
-      setShowSummary(true);
+  // Handle vote submission
+  const handleSubmitVote = async () => {
+    // Check if all positions have a selection (either a candidate or abstain)
+    const missingSelections = positions.filter(position => 
+      !selectedCandidates[position.position_id]
+    );
+    
+    if (missingSelections.length > 0) {
+      alert("Please make a selection for all positions. You can select a candidate or choose to abstain.");
+      return;
     }
-  };
-
-  const handlePrevious = () => {
-    if (currentPositionIndex > 0) {
-      setCurrentPositionIndex(currentPositionIndex - 1);
-    } else if (showSummary) {
-      setShowSummary(false);
-      setCurrentPositionIndex(electionData.positions.length - 1);
-    }
-  };
-
-  const handleEditVote = (positionIndex) => {
-    setCurrentPositionIndex(positionIndex);
-    setShowSummary(false);
-  };
-
-  const handleSubmitVotes = async () => {
+    
     try {
-      // This would be your API call to submit votes
-      console.log("Votes submitted:", selections);
-      navigate(`/election/${id}?voted=success`);
-    } catch (error) {
-      console.error("Error submitting votes:", error);
+      setSubmitting(true);
+      
+      // Format vote data for API - only include positions with actual candidates (not abstained)
+      const votesArray = positions
+        .filter(position => {
+          // Only include positions where the user selected an actual candidate (not abstaining)
+          const selection = selectedCandidates[position.position_id];
+          return selection && selection !== 'abstain';
+        })
+        .map(position => ({
+          position_id: parseInt(position.position_id),
+          candidate_id: parseInt(selectedCandidates[position.position_id])
+        }));
+      
+      // If no positions have actual votes (all abstained), show warning
+      if (votesArray.length === 0) {
+        if (!confirm("You've chosen to abstain from all positions. Do you want to continue?")) {
+          setSubmitting(false);
+          return;
+        }
+      }
+      
+      const voteData = {
+        election_id: parseInt(id),
+        votes: votesArray
+      };
+      
+      // Submit vote using our API function
+      const response = await submitVote(token, voteData);
+      
+      // Handle error response
+      if (response.success === false || response.message?.includes('error') || response.status === 'error') {
+        setError(response.message || 'Failed to submit vote. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+      
+      // Show success message
+      setSuccessMessage('Your vote has been successfully submitted!');
+      
+      // After 2 seconds, perform a hard redirect instead of using navigate
+      setTimeout(() => {
+        // Force a complete page refresh
+        window.location.href = `/election/${id}`;
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Error submitting vote:', err);
+      setError(`Failed to submit your vote: ${err.message || 'Unknown error'}`);
+      setSubmitting(false);
     }
   };
 
+  useEffect(() => {
+    console.log("VotingProcess component mounted");
+    console.log("Election ID:", id);
+    console.log("User:", user);
+  }, []);
+
+  // Add this debugging code to check the data before showing summary
+  useEffect(() => {
+    if (showSummary) {
+      console.log("Selected Candidates:", selectedCandidates);
+      console.log("Positions:", positions);
+    }
+  }, [showSummary, selectedCandidates, positions]);
+
+  // Loading state
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-xl text-[#3F4B8C]">Loading voting ballot...</div>
+      </div>
+    );
   }
 
-  const currentPosition = electionData.positions[currentPositionIndex];
-  const progressStep = showSummary ? electionData.positions.length + 1 : currentPositionIndex + 1;
-  const totalSteps = electionData.positions.length + 1; // +1 for summary
+  // Error state
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-xl text-red-500">{error}</div>
+      </div>
+    );
+  }
 
-  // Fix: Calculate isNextDisabled separately to handle the case when showSummary is true
-  const isNextDisabled = showSummary ? false : !selections[currentPosition.id];
+  // Success state
+  if (successMessage) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="bg-green-100 text-green-800 p-6 rounded-lg text-center">
+          <h2 className="text-2xl font-bold mb-2">Success!</h2>
+          <p className="text-xl">{successMessage}</p>
+          <p className="mt-4">Redirecting you back to the election page...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentPosition = positions[currentPositionIndex];
+  const progressStep = showSummary ? positions.length + 1 : currentPositionIndex + 1;
+  const totalSteps = positions.length + 1; // +1 for summary
+
+  // Calculate if next button should be disabled
+  const isNextDisabled = showSummary ? false : !selectedCandidates[currentPosition.position_id];
 
   return (
     <div className="min-h-screen flex flex-col -mx-8 -mt-8">
@@ -207,7 +184,7 @@ const VotingProcess = () => {
       <div className="w-full bg-gray-200 py-6">
         {/* Election Title */}
         <h1 className="text-[#3F4B8C] font-climate text-4xl text-center tracking-wider mb-6">
-          {electionData.title}
+          {election.election_name}
         </h1>
 
         {/* Progress Bar - custom style to match image */}
@@ -228,23 +205,39 @@ const VotingProcess = () => {
             {!showSummary ? (
               <PositionVoting 
                 position={currentPosition}
-                selectedCandidateId={selections[currentPosition.id]}
+                selectedCandidateId={selectedCandidates[currentPosition.position_id]}
                 onSelectCandidate={handleSelectCandidate}
-                onAbstain={handleAbstain}
               />
             ) : (
               <VoteSummary 
-                positions={electionData.positions}
-                selections={selections}
-                onEdit={handleEditVote}
+                positions={positions}
+                selections={selectedCandidates}
+                onEdit={(positionIndex) => {
+                  setCurrentPositionIndex(positionIndex);
+                  setShowSummary(false);
+                }}
               />
             )}
 
             <NavigationButtons 
               showSummary={showSummary}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              onSubmit={handleSubmitVotes}
+              submitting={submitting}
+              onPrevious={() => {
+                if (currentPositionIndex > 0) {
+                  setCurrentPositionIndex(currentPositionIndex - 1);
+                } else if (showSummary) {
+                  setShowSummary(false);
+                  setCurrentPositionIndex(positions.length - 1);
+                }
+              }}
+              onNext={() => {
+                if (currentPositionIndex < positions.length - 1) {
+                  setCurrentPositionIndex(currentPositionIndex + 1);
+                } else {
+                  setShowSummary(true);
+                }
+              }}
+              onSubmit={handleSubmitVote}
               isPreviousDisabled={currentPositionIndex === 0 && !showSummary}
               isNextDisabled={isNextDisabled}
             />

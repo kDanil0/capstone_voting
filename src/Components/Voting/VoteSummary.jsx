@@ -10,7 +10,7 @@ const VoteSummary = ({ positions, selections, onEdit }) => {
 
       <div className="space-y-4 mb-8">
         {positions.map((position, index) => {
-          const selection = selections[position.id];
+          const selection = selections[position.position_id];
           let selectionText = "No selection";
           
           if (selection === 'abstain') {
@@ -21,10 +21,10 @@ const VoteSummary = ({ positions, selections, onEdit }) => {
           }
           
           return (
-            <div key={position.id} className="bg-white p-4 rounded-lg shadow">
+            <div key={position.position_id} className="bg-white p-4 rounded-lg shadow">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-[#3F4B8C] font-assistant font-bold">{position.title}</h3>
+                  <h3 className="text-[#3F4B8C] font-assistant font-bold">{position.position}</h3>
                   <p className="text-gray-700 font-assistant">{selectionText}</p>
                 </div>
                 <button 

@@ -22,30 +22,37 @@ function VerticalNavBar() {
       const token = localStorage.getItem("token");
       await logoutUser(token);
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setToken(null);
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
+      navigate("/");
     }
   };
 
-  // Modified to use testRole when available
   const getNavigationLinks = () => {
-    // If in test mode, use the test role
-    const roleId = testRole !== null ? testRole : user?.role_id;
-    
-    if (!user?.name && !testRole) {
-      return navLinks.filter((link) => link.name !== "Sign Out");
+    // If no user is logged in, show default navigation
+    if (!user?.name) {
+        return navLinks;
     }
 
-    if (roleId === 1) { // Admin role
-      return adminNavLinks;
+    // Role 1: Student - regular student view
+    if (user.role_id === 1) {
+        return navLinks; // Regular navigation for students
     }
     
-    if (roleId === 2) {
-      return [...navLinks, ...candidateLinks];
+    // Role 2: Candidate - access to candidate features
+    if (user.role_id === 2) {
+        return candidateLinks;
     }
 
+    // Role 3: Admin - access to admin dashboard and features
+    if (user.role_id === 3) {
+        return adminNavLinks;
+    }
+
+    // Default to regular navigation if role is undefined
     return navLinks;
   };
 
@@ -55,40 +62,12 @@ function VerticalNavBar() {
   const isDevEnvironment = process.env.NODE_ENV === 'development';
 
   return (
-    <>
-      {isDevEnvironment && (
-        <div className="fixed top-0 right-0 bg-yellow-100 p-2 z-50 border border-yellow-400 rounded m-2">
-          <h3 className="font-bold text-sm">Navbar Role Tester</h3>
-          <div className="flex gap-2 mt-1">
-            <button 
-              onClick={() => setTestRole(null)} 
-              className={`px-2 py-1 text-xs rounded ${testRole === null ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Normal
-            </button>
-            <button 
-              onClick={() => setTestRole(1)} 
-              className={`px-2 py-1 text-xs rounded ${testRole === 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Admin
-            </button>
-            <button 
-              onClick={() => setTestRole(2)} 
-              className={`px-2 py-1 text-xs rounded ${testRole === 2 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Candidate
-            </button>
-          </div>
-          <div className="text-xs mt-1">
-            Current: {testRole !== null ? `Test (${testRole})` : `Actual (${user?.role_id || 'guest'})`}
-          </div>
-        </div>
-      )}
-      
+    <>    
       <nav className="text-xl w-64 bg-[#38438c] text-[#e3e3e8] shrink-0">
         <div className="flex flex-col h-screen sticky top-0">
-          <div className="flex flex-col items-center p-4 border-b border-[#e3e3e8]">
-            <div className="w-20 h-20 rounded-full bg-[#e3e3e8] flex items-center justify-center mb-2">
+          {/* Fixed height header section */}
+          <div className="h-[180px] mt-6 flex flex-col items-center p-4 border-b border-[#e3e3e8]">
+            <div className="w-20 h-20 rounded-full bg-[#e3e3e8] flex items-center justify-center mb-2 flex-shrink-0">
               {user?.image ? (
                 <img
                   src={user.image}
@@ -99,11 +78,12 @@ function VerticalNavBar() {
                 <User size={40} className="text-[#38438c]" />
               )}
             </div>
-            <span className="text-lg font-climate tracking-widest text-center">
+            <span className="text-xl font-climate tracking-widest text-center max-w-full">
               {user?.name || "Guest"}
             </span>
           </div>
 
+          {/* Scrollable navigation section */}
           <div className="flex-grow font-bebas tracking-widest overflow-y-auto">
             {filteredNavLinks.map((link) => (
               <NavItem key={link.path} {...link} />
@@ -126,6 +106,7 @@ function VerticalNavBar() {
             )}
           </div>
 
+          {/* Fixed bottom section */}
           {(user?.name || testRole) && (
             <div onClick={handleSignOut} className="mt-auto">
               <NavItem {...bottomNavLink} />

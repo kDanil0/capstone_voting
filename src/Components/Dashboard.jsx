@@ -57,8 +57,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-col w-full">
-      {/* Full-width header without negative left margin */}
-      <div className="bg-gray-200 py-6 -mr-8 -mt-8 mb-8 w-full">
+      <div className="bg-gray-200 px-8 pt-10 -mx-8 -mt-8">
         <h1 className="text-[#4B3B7C] text-5xl font-climate text-center tracking-widest">
           RESULTS
         </h1>

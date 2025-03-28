@@ -1,16 +1,30 @@
-import React, { useState } from "react";
-import { loginUser } from "../utils/api";
+import React, { useState, useEffect } from "react";
+import { webLoginUser } from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../utils/AuthContext";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { setToken, user } = useAuthContext();
   const [formData, setFormData] = useState({
     student_id: "",
-    email: "",
+    tokenOTP: "",
   });
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  useEffect(() => {
+    if (shouldRedirect && user) {
+      if (user.role_id === 2) {
+        navigate('/candidate/profile');
+      } else {
+        navigate('/');
+      }
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -26,22 +40,20 @@ const LoginForm = () => {
     setSuccessMessage("");
 
     try {
-      const response = await loginUser(formData);
+      const response = await webLoginUser(formData);
+      console.log('Login response:', response);
+      console.log('Raw API response data:', response.data);
 
-      if (response.success) {
-        setSuccessMessage(response.message);
-        // Navigate to verify page with both email and student_id
-        navigate("/verify", {
-          state: {
-            email: formData.email,
-            student_id: formData.student_id,
-            user: response.user, // Pass the user data if needed
-          },
-        });
+      if (response.success && response.data?.token) {
+        console.log('Token to be set:', response.data.token);
+        setToken(response.data.token);
+        setSuccessMessage("Login successful!");
+        setShouldRedirect(true);
       } else {
         setError(response.message || "Login failed. Please try again.");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -49,22 +61,29 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-4/12 mx-auto mt-8 p-8 bg-white rounded-2xl">
-      {/* Logo */}
-      <div className="mb-8 text-center">
-        <h2 className="text-4xl font-climate tracking-wider mt-4 font-bold text-[#3F51B5]">
-          Login
-        </h2>
+    <div className="w-full">
+      {/* Logo for mobile view only */}
+      <div className="md:hidden flex justify-center mb-8">
+        <img 
+          src="/src/assets/logo.png" 
+          alt="School Logo" 
+          className="w-24 h-24 object-contain" 
+        />
+      </div>
+
+      {/* Form header */}
+      <div className="mb-8">
+        <h2 className="text-3xl font-climate text-[#38438c] mb-2">Welcome</h2>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+        <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg text-sm">
           {error}
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-lg text-sm">
+        <div className="mb-6 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-r-lg text-sm">
           {successMessage}
         </div>
       )}
@@ -72,7 +91,7 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label
-            className="block text-md font-medium font-assistant text-gray-700 mb-2"
+            className="block text-sm font-medium text-gray-700 mb-2"
             htmlFor="student_id"
           >
             Student ID
@@ -83,8 +102,8 @@ const LoginForm = () => {
             name="student_id"
             value={formData.student_id}
             onChange={handleChange}
-            className="font-assistant w-full px-4 py-2 rounded-lg bg-[#F5F5F5] border border-gray-200
-                     focus:border-[#3F51B5] focus:ring-1 focus:ring-[#3F51B5] outline-none
+            className="w-full px-4 py-3 rounded-lg bg-white border border-gray-300
+                     focus:border-[#38438c] focus:ring-2 focus:ring-[#38438c] focus:ring-opacity-30 outline-none
                      transition-all"
             required
             placeholder="Enter your student ID"
@@ -93,33 +112,33 @@ const LoginForm = () => {
 
         <div>
           <label
-            className="block text-md font-medium font-assistant text-gray-700 mb-2"
-            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+            htmlFor="tokenOTP"
           >
-            Email
+            One Time Password
           </label>
           <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
+            type="text"
+            id="tokenOTP"
+            name="tokenOTP"
+            value={formData.tokenOTP}
             onChange={handleChange}
-            className="font-assistant w-full px-4 py-2 rounded-lg bg-[#F5F5F5] border border-gray-200
-                     focus:border-[#3F51B5] focus:ring-1 focus:ring-[#3F51B5] outline-none
+            className="w-full px-4 py-3 rounded-lg bg-white border border-gray-300
+                     focus:border-[#38438c] focus:ring-2 focus:ring-[#38438c] focus:ring-opacity-30 outline-none
                      transition-all"
             required
-            placeholder="Enter your email"
+            placeholder="Enter your One Time Password"
           />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className={`font-assistant w-full py-3 px-4 rounded-lg font-bold text-white
+          className={`w-full py-3 px-4 rounded-lg font-medium text-white text-center
                      ${
                        isLoading
                          ? "bg-gray-400 cursor-not-allowed"
-                         : "bg-[#3F51B5] hover:bg-[#4B5FCD] transition-colors"
+                         : "bg-[#38438c] hover:bg-[#2d3570] transition-colors"
                      }`}
         >
           {isLoading ? (
@@ -147,7 +166,7 @@ const LoginForm = () => {
               Processing...
             </span>
           ) : (
-            "Login"
+            "Log In"
           )}
         </button>
       </form>

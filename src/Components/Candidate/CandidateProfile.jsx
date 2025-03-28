@@ -1,40 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, User, Edit, PenSquare } from "lucide-react";
+import { Upload, User, Edit, PenSquare, X, Check, Image, Video } from "lucide-react";
 import StatusBadge from "../CommonComponents/StatusBadge";
+import Post from "../Post";
+import { BASE_URL } from '../../utils/api';
 
-const CandidateProfile = ({ candidate }) => {
+const CandidateProfile = ({ candidateData, onBioUpdate, onPhotoUpload }) => {
   const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState(null);
-
-  // Default candidate data (replace with props or API data)
-  const defaultCandidate = {
-    name: "Cullera, Michael Angelo",
-    partylist: "TAKBONGKABAYO PARTYLIST",
-    position: "CCIS VP CANDIDATE",
-    image: "/path/to/candidate-image.jpg", // Replace with actual image path
-    bio: "Ako gawin niyong vice president, walang required bayaran at walang corruption",
-    platform: [
-      "MAGING POGI AT MAGANDA LAHAT",
-      "PEDE KAHIT ANONG ASTETIK",
-      "MAGANDANG DEPT SHIRT",
-      "DI PAPANG LABAS ANG FUNDS"
-    ],
-    documents: [
-      { name: "AGENDA VIDEO.MP4", status: "ON REVIEW" },
-      { name: "LEAKS OF CORRUPTION.DOCX", status: "DECLINED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-      { name: "INCREASE OF FUNDS FOR EVENTS", status: "APPROVED" },
-    ]
-  };
-
-  const candidateData = candidate || defaultCandidate;
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [newBio, setNewBio] = useState(candidateData?.bio || '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [newPost, setNewPost] = useState('');
+  const [imageError, setImageError] = useState(false);
 
   const handleDocumentClick = () => {
     navigate("/document");
@@ -42,7 +20,28 @@ const CandidateProfile = ({ candidate }) => {
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0].name);
+      setProfileImage(e.target.files[0].name);
+    }
+  };
+
+  const handleBioSubmit = async () => {
+    try {
+      await onBioUpdate(newBio);
+      setIsEditingBio(false);
+    } catch (error) {
+      console.error('Failed to update bio:', error);
+    }
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIsUploading(true);
+      try {
+        await onPhotoUpload(file);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -67,158 +66,192 @@ const CandidateProfile = ({ candidate }) => {
     // Future implementation: Open edit modal or navigate to edit page
   };
 
+  // Debug log to check candidateData
+  // console.log('Profile photo path:', candidateData?.profile_photo);
+
+  const getStorageUrl = (path) => {
+    if (!path) return null;
+    const baseUrl = BASE_URL.replace(/\/+$/, '');
+    const cleanPath = path.replace(/^\/+/, '');
+    return `${baseUrl}/storage/${cleanPath}`;
+  };
+
+  const renderProfileImage = () => {
+    if (!candidateData?.profile_photo || imageError) {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <User size={40} className="text-gray-400" />
+        </div>
+      );
+    }
+
+    // Debug log the constructed URL
+    const imageUrl = getStorageUrl(candidateData.profile_photo);
+    // console.log('Constructed image URL:', imageUrl);
+
+    return (
+      <img 
+        src={imageUrl}
+        alt={candidateData.user?.name || 'Profile'}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          console.error('Image failed to load:', e);
+          setImageError(true);
+        }}
+      />
+    );
+  };
+
+  if (!candidateData) return null;
+
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-4 max-w-full mx-auto">
-      {/* Left Section - Candidate Profile */}
-      <div className="w-full md:w-3/5 bg-white rounded-lg overflow-hidden shadow-md">
-        {/* Banner and Profile Image */}
-        <div className="relative">
-          {/* Banner Image with Edit Button */}
-          <div className="border-[#38438c] border-2 h-48 bg-blue-500 overflow-hidden relative">
-            <img 
-              src="/path/to/building-banner.jpg" 
-              alt="PLACE HOLDER FOR PARTYLIST LOGO" 
-              className="w-full object-cover"
-            />
-            {/* Edit Button for Partylist Logo */}
-            <button 
-              onClick={handleEditPartylistLogo}
-              className="absolute top-2 right-2 bg-white bg-opacity-70 p-1 rounded-full hover:bg-opacity-100 transition-all"
-              title="Edit Partylist Logo"
-            >
-              <Edit size={16} className="text-[#3F4B8C]" />
-            </button>
-          </div>
-          
-          {/* Profile Image with Edit Button */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 group">
-            <div className="w-32 h-32 rounded-full border-[#38438c] border-2 overflow-hidden bg-white relative">
-              <img 
-                src={candidateData.image} 
-                alt={candidateData.name} 
-                className="w-full h-full object-cover"
-              />
+    <div className="h-full max-w-[1200px] mx-auto pt-4 px-4">
+      <div className="flex gap-4">
+        {/* Main Content */}
+        <div className="flex-grow max-w-[800px]">
+          {/* Profile Banner and Info */}
+          <div className="bg-white rounded-lg shadow mb-4">
+            {/* Banner Image */}
+            <div className="h-48 bg-[#38438c] rounded-t-lg relative">
+              {candidateData?.banner_image && (
+                <img 
+                  src={`/storage/${candidateData.banner_image}`}
+                  alt="Banner"
+                  className="w-full h-full object-cover rounded-t-lg"
+                />
+              )}
             </div>
-            {/* Edit Button for Profile Picture - Moved outside the circle */}
-            <button 
-              onClick={handleEditProfilePicture}
-              className="absolute -bottom-0 -right-0 bg-[#3F4B8C] p-1.5 rounded-full hover:bg-[#2F3875] transition-all shadow-md"
-              title="Edit Profile Picture"
-            >
-              <PenSquare size={16} className="text-white" />
-            </button>
-          </div>
-        </div>
-        
-        {/* Candidate Information */}
-        <div className="pt-16 pb-6 px-6">
-          {/* Name and Partylist */}
-          <h1 className="text-[#3F4B8C] font-climate text-3xl text-center">
-            {candidateData.name}
-          </h1>
-          <h2 className="text-[#3F4B8C] font-bebas font-bold text-2xl text-center tracking-wider">
-            {candidateData.partylist}
-          </h2>
-          <p className="text-[#3F4B8C] text-center mb-8">
-            {candidateData.position}
-          </p>
-          
-          {/* Bio Section with Edit Button */}
-          <div className="mb-6 relative">
-            <h3 className="text-[#3F4B8C] font-climate text-xl mb-2">BIO:</h3>
-            <div className="border border-[#3F4B8C] border-dashed rounded-md p-4 relative">
-              <p className="text-gray-700">{candidateData.bio}</p>
-              {/* Edit Button for Bio */}
-              <button 
-                onClick={handleEditBio}
-                className="absolute top-2 right-2 bg-gray-100 p-1 rounded-full hover:bg-gray-200 transition-all"
-                title="Edit Bio"
-              >
-                <Edit size={14} className="text-[#3F4B8C]" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Platform Section with Edit Button */}
-          <div className="relative">
-            <h3 className="text-[#3F4B8C] font-climate text-xl mb-2">PLATFORM:</h3>
-            <div className="border border-[#3F4B8C] border-dashed rounded-md p-4 relative">
-              <ul className="text-gray-700">
-                {candidateData.platform.map((item, index) => (
-                  <li key={index} className="mb-1">-{item}</li>
-                ))}
-              </ul>
-              {/* Edit Button for Platform */}
-              <button 
-                onClick={handleEditPlatform}
-                className="absolute top-2 right-2 bg-gray-100 p-1 rounded-full hover:bg-gray-200 transition-all"
-                title="Edit Platform"
-              >
-                <Edit size={14} className="text-[#3F4B8C]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Right Section - Documents */}
-      <div className="w-full md:w-2/5 bg-white rounded-lg p-6 text-[#3F6B7C] shadow-md border border-[#3F6B7C]">
-        {/* Drag and Drop File Upload */}
-        <div className="mb-6">
-          <div 
-            className="border-2 border-dashed border-[#3F6B7C] rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => document.getElementById('fileInput').click()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (e.dataTransfer.files.length > 0) {
-                setSelectedFile(e.dataTransfer.files[0].name);
-              }
-            }}
-            onDragOver={(e) => e.preventDefault()}
-          >
-            <Upload size={32} className="text-[#3F6B7C] mb-2" />
-            <p className="text-[#3F6B7C] font-bold font-assistant text-2xl text-center">Drag and drop files here</p>
-            <p className="text-[#3F6B7C] text-md font-assistant text-center">or click to browse</p>
-            {selectedFile && (
-              <div className="mt-3 text-sm bg-[#3F6B7C] bg-opacity-10 px-3 py-1 rounded-full">
-                {selectedFile}
-              </div>
-            )}
-            <input 
-              id="fileInput" 
-              type="file" 
-              className="hidden" 
-              onChange={handleFileChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Separator Line */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-full h-px bg-[#3F6B7C]"></div>
-        </div>
-        
-        {/* Document List Header */}
-        <h3 className="text-[#3F6B7C] font-climate text-xl mb-4">DOCUMENTS:</h3>
-        
-        {/* Document List - Fixed Height Scrollable Container */}
-        <div className="h-96 overflow-y-auto pr-1 custom-scrollbar">
-          {candidateData.documents.map((doc, index) => (
-            <div 
-              key={index} 
-              className={`px-3 py-3 flex justify-between items-center ${index % 2 === 0 ? 'bg-[#38738c] bg-opacity-30' : 'bg-[#38738c] bg-opacity-10'}`}
-            >
-              <div className="flex items-center">
-                <div className="w-8 h-8 flex items-center justify-center bg-white rounded-full mr-3 shadow-sm">
-                  <Upload size={14} className="text-[#3F6B7C]" />
+
+            {/* Profile Info */}
+            <div className="px-4 pb-4">
+              <div className="flex items-end -mt-6">
+                {/* Profile Picture */}
+                <div className="relative">
+                  <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-gray-200">
+                    {renderProfileImage()}
+                  </div>
+                  <label className="absolute bottom-0 right-0 bg-[#38438c] text-white p-2 rounded-full cursor-pointer hover:bg-[#4B5FCD]">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      disabled={isUploading}
+                    />
+                    <Upload size={16} />
+                  </label>
                 </div>
-                <span className="text-[#3F6B7C]">
-                  {doc.name}
-                </span>
+
+                {/* Name and Details */}
+                <div className="ml-4 -mb-3">
+                  <h1 className="text-2xl font-bold">{candidateData?.user?.name}</h1>
+                  <p className="text-gray-600">{candidateData?.position?.name}</p>
+                  <p className="text-gray-600">{candidateData?.partylist?.name}</p>
+                </div>
               </div>
-              <StatusBadge status={doc.status} />
             </div>
-          ))}
+
+            {/* Bio Section with Edit Functionality */}
+            <div className="border-t px-4 py-3">
+              <div className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="font-bold">Bio</h2>
+                  {!isEditingBio && (
+                    <button
+                      onClick={() => {
+                        setIsEditingBio(true);
+                        setNewBio(candidateData?.bio || '');
+                      }}
+                      className="text-[#38438c] hover:text-[#4B5FCD]"
+                    >
+                      <Edit size={18} />
+                    </button>
+                  )}
+                </div>
+                
+                {isEditingBio ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={newBio}
+                      onChange={(e) => setNewBio(e.target.value)}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#38438c] focus:border-transparent"
+                      rows="4"
+                      placeholder="Write your bio here..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setIsEditingBio(false);
+                          setNewBio(candidateData?.bio || '');
+                        }}
+                        className="p-1 text-gray-600 hover:text-gray-800"
+                      >
+                        <X size={20} />
+                      </button>
+                      <button
+                        onClick={handleBioSubmit}
+                        className="p-1 text-green-600 hover:text-green-700"
+                      >
+                        <Check size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">{candidateData?.bio || 'No bio available'}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Post Creation */}
+            <div className="border-t px-4 py-3">
+              <div className="border rounded-lg p-4">
+                <textarea
+                  placeholder="Share your platform here"
+                  className="w-full p-2 border rounded-lg mb-2"
+                  value={newPost}
+                  onChange={(e) => setNewPost(e.target.value)}
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <button className="flex items-center gap-1 text-gray-600">
+                      <Image size={20} />
+                      Photo
+                    </button>
+                    <button className="flex items-center gap-1 text-gray-600">
+                      <Video size={20} />
+                      Video
+                    </button>
+                  </div>
+                  <button className="bg-[#38438c] text-white px-4 py-2 rounded-lg hover:bg-[#4B5FCD]">
+                    Make a Post
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents Section (Right Side) */}
+        <div className="w-[300px]">
+          <div className="bg-white rounded-lg shadow p-4">
+            <h2 className="font-bold text-lg mb-4">Documents</h2>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 text-center">
+              <p className="text-gray-500">Drag and drop files here to upload</p>
+            </div>
+            
+            {/* Document List */}
+            <div className="space-y-2">
+              {/* Example documents - replace with actual data */}
+              {['PLATFORM PROPOSAL', 'LEAVE OF CONSULTATION', 'INCREASE OF FUNDS'].map((doc, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                  <span className="text-sm">{doc}</span>
+                  <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded">
+                    APPROVED
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,12 +1,12 @@
 import React from "react";
 import Post from "../../Components/Post";
 
-function Candidates() {
+function UserCandidates() {
   return (
     <div className="flex flex-col w-full">
-      <Post />
+      <Post readOnly={true} />
     </div>
   );
 }
 
-export default Candidates;
+export default UserCandidates; 
