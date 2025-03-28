@@ -12,7 +12,7 @@ const VotingInfoCard = React.memo(({ hasVoted, onVoteClick, electionId, voteSumm
     <Card 
       title={<div className="text-[#3F4B8C] font-climate text-xl tracking-widest">VOTING INFORMATION</div>}
       className="h-full"
-      style={{ background: '#f9f9f9' }}
+      style={{ background: 'f9f9f9' }}
     >
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

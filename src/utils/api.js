@@ -359,3 +359,108 @@ export const submitVote = async (token, voteData) => {
     };
   }
 };
+
+// Create a new post (for candidates)
+export const createPost = async (token, postData) => {
+  try {
+    const formData = new FormData();
+    
+    // Add text fields
+    formData.append('title', postData.title);
+    formData.append('content', postData.content);
+    
+    // Add image if present
+    if (postData.image) {
+      formData.append('image', postData.image);
+    }
+    
+    const response = await axiosInstance.post('/api/candidates/posts/upload', formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data', // Important for file uploads
+      }
+    });
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error("Error creating post:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to create post'
+    };
+  }
+};
+
+// Fetch all approved posts (authenticated and non-authenticated endpoints)
+export const getApprovedPosts = async (token = null, page = 1, perPage = 5, search = '') => {
+  try {
+    // Create request config with pagination parameters
+    const config = {
+      params: {
+        page,
+        per_page: perPage
+      },
+      headers: {}
+    };
+    
+    // Add search parameter if provided
+    if (search && search.trim()) {
+      config.params.search = search.trim();
+    }
+    
+    // Use different endpoints based on authentication status
+    const endpoint = token 
+      ? '/api/posts/approved'  // Authenticated endpoint
+      : '/api/posts/approved/public';  // Public endpoint
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    const response = await axiosInstance.get(endpoint, config);
+    
+    // Return posts, pagination metadata, and hasMore flag
+    return {
+      success: true,
+      data: response.data.posts || [],
+      pagination: response.data.pagination || {},
+      hasMore: response.data.pagination?.current_page < response.data.pagination?.last_page
+    };
+  } catch (error) {
+    console.error("Error fetching approved posts:", error);
+    return {
+      success: false,
+      data: [],
+      pagination: {},
+      hasMore: false,
+      error: error.response?.data?.message || "Failed to fetch posts"
+    };
+  }
+};
+
+// Fetch approved posts for a specific candidate
+export const getApprovedPostsByCandidate = async (token, candidateId) => {
+  try {
+    const config = token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : { headers: {} };
+    
+    const response = await axiosInstance.get(`/api/posts/approved/${candidateId}`, config);
+    
+    return {
+      success: true,
+      data: response.data || []
+    };
+  } catch (error) {
+    console.error("Error fetching candidate posts:", error);
+    return {
+      success: false,
+      data: [],
+      error: error.response?.data?.message || "Failed to fetch candidate posts"
+    };
+  }
+};
+

@@ -4,6 +4,7 @@ import ElectionInfoCard from '../../Components/Election/ElectionInfoCard';
 import VotingInfoCard from '../../Components/Election/VotingInfoCard';
 import PositionCard from '../../Components/Election/PositionCard';
 import { getElectionDetails, getElectionById, getPublicElectionDetails } from '../../utils/api';
+import { ClipLoader } from 'react-spinners';
 import { useAuthContext } from '../../utils/AuthContext';
 
 const ElectionDetails = () => {
@@ -255,13 +256,17 @@ const ElectionDetails = () => {
     }
   };
 
-  // Loading state with a minimalist spinner
+  // Loading state with react-spinners
   if (pageState.loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-[#38438c] rounded-full animate-spin mx-auto"></div>
-          <div className="mt-4 text-[#38438c] font-medium">
+          <ClipLoader
+            color="#38438c"
+            size={100}
+            speedMultiplier={1}
+          />
+          <div className="mt-4 text-[#38438c] font-climate text-2xl">
             Loading Election Details
           </div>
         </div>
@@ -293,7 +298,7 @@ const ElectionDetails = () => {
       {/* Content area */}
       <div className="h-[calc(100vh-120px)] overflow-hidden">
         <div className="container mx-auto h-full px-4 pb-4">
-          <div className="bg-white rounded-lg shadow-xl p-6 h-full">
+          <div className=" rounded-lg shadow-xl p-6 h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
               {/* Left Column */}
               <div className="h-full flex flex-col overflow-hidden">

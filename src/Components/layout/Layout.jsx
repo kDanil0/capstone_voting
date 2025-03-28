@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
       </div>
       
       {/* Main content area */}
-      <div className="pl-64 w-full min-h-screen bg-gray-100">
+      <div className="pl-64 w-full min-h-screen bg-gray-200">
         {/* Main Content Area */}
         <div className="p-6">
           {children}
